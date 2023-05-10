@@ -22,7 +22,6 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/simpletoken"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/relay/ethereum"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
-	"github.com/hyperledger-labs/yui-relayer/core"
 )
 
 type PathSrcDst int
@@ -57,12 +56,9 @@ type Chain struct {
 	SimpleToken   simpletoken.Simpletoken
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
-
-	// PathEnd specific helpers
-	PathEnd core.PathEnd
 }
 
-func NewChain(pathEnd *core.PathEnd, chainConfig ChainConfig, client *client.ETHClient, mnemonicPhrase string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) *Chain {
+func NewChain(chainConfig ChainConfig, client *client.ETHClient, mnemonicPhrase string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) *Chain {
 	ibcHandler, err := ibchandler.NewIbchandler(chainConfig.Chain.IBCAddress(), client)
 	if err != nil {
 		log.Print(err)
@@ -96,7 +92,6 @@ func NewChain(pathEnd *core.PathEnd, chainConfig ChainConfig, client *client.ETH
 		SimpleToken:   *simpletoken,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
-		PathEnd:       *pathEnd,
 	}
 }
 
@@ -147,10 +142,6 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 }
 
 func InitializeChains(configDir string, path PathSrcDst, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
-	pathConfig, err := parsePathConfig(fmt.Sprintf("%s/%s", configDir, "path.json"))
-	if err != nil {
-		return nil, err
-	}
 	chainConfigs, err := ParseChainConfigs(fmt.Sprintf("%s/%s", configDir, "chains"))
 	if err != nil {
 		return nil, err
@@ -160,21 +151,9 @@ func InitializeChains(configDir string, path PathSrcDst, simpleTokenAddress, ics
 	if err != nil {
 		return nil, err
 	}
-	chain := NewChain(pathConfig.Src, *config, ethClient, config.Chain.HdwMnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	chain := NewChain(*config, ethClient, config.Chain.HdwMnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
 
 	return chain, nil
-}
-
-func parsePathConfig(configFile string) (*core.Path, error) {
-	var pathConfig core.Path
-	byt, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(byt, &pathConfig); err != nil {
-		return nil, err
-	}
-	return &pathConfig, nil
 }
 
 func ParseChainConfigs(configDir string) ([]*ChainConfig, error) {

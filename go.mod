@@ -10,7 +10,6 @@ replace (
 require (
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/hyperledger-labs/yui-ibc-solidity v0.3.4
-	github.com/hyperledger-labs/yui-relayer v0.3.2
 	github.com/spf13/cobra v1.7.0
 )
 
@@ -71,6 +70,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hdevalence/ed25519consensus v0.0.0-20210204194344-59a8610d2b87 // indirect
 	github.com/holiman/uint256 v1.2.2-0.20230321075855-87b91420868c // indirect
+	github.com/hyperledger-labs/yui-relayer v0.3.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
