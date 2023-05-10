@@ -25,6 +25,13 @@ import (
 	"github.com/hyperledger-labs/yui-relayer/core"
 )
 
+type PathSrcDst int
+
+const (
+	PathSrc PathSrcDst = iota
+	PathDst
+)
+
 type ChainConfig struct {
 	Chain  ethereum.ChainConfig `json:"chain"`
 	Prover ProverConfig         `json:"prover"`
@@ -118,10 +125,6 @@ func (chain *Chain) CallOpts(ctx context.Context, index uint32) *bind.CallOpts {
 	}
 }
 
-func (chain *Chain) LastHeader(ctx context.Context) (*gethtypes.Header, error) {
-	return chain.client.HeaderByNumber(ctx, nil)
-}
-
 func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Context) *bind.TransactOpts {
 	signer := gethtypes.LatestSignerForChainID(chainID)
 	addr := gethcrypto.PubkeyToAddress(prv.PublicKey)
@@ -143,29 +146,23 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 	}
 }
 
-func InitializeChains(configDir, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, *Chain, error) {
+func InitializeChains(configDir string, path PathSrcDst, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
 	pathConfig, err := parsePathConfig(fmt.Sprintf("%s/%s", configDir, "path.json"))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	chainConfigs, err := ParseChainConfigs(fmt.Sprintf("%s/%s", configDir, "chains"))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	src := chainConfigs[0]
-	dst := chainConfigs[1]
-	ethClientA, err := client.NewETHClient(src.Chain.RpcAddr)
+	config := chainConfigs[path]
+	ethClient, err := client.NewETHClient(config.Chain.RpcAddr)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	ethClientB, err := client.NewETHClient(dst.Chain.RpcAddr)
-	if err != nil {
-		return nil, nil, err
-	}
-	chainA := NewChain(pathConfig.Src, *src, ethClientA, src.Chain.HdwMnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
-	chainB := NewChain(pathConfig.Dst, *dst, ethClientB, dst.Chain.HdwMnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	chain := NewChain(pathConfig.Src, *config, ethClient, config.Chain.HdwMnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
 
-	return chainA, chainB, nil
+	return chain, nil
 }
 
 func parsePathConfig(configFile string) (*core.Path, error) {

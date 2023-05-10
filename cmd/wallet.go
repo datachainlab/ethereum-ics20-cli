@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
@@ -11,34 +10,35 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	WalletUsage = "Usage: address <configDir> <chainIndex> <walletIndex>"
-)
-
 func walletCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "wallet",
-		Short: WalletUsage,
-		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) != 3 {
-				log.Fatalln(WalletUsage)
-			}
+		Short: "wallet commands",
+	}
+	addressCmd := &cobra.Command{
+		Use:   "address",
+		Short: "address of the wallet",
+		Long:  "Usage: address <configDir> <chainIndex> <walletIndex>",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			configDir := args[0]
 			chainIndex, err := strconv.ParseUint(args[1], 10, 64)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 			walletIndex, err := strconv.ParseUint(args[2], 10, 64)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 			address, err := address(configDir, chainIndex, walletIndex)
 			if err != nil {
-				log.Fatalln("address Error: ", err)
+				return err
 			}
 			fmt.Printf("%s", address)
+			return nil
 		},
 	}
+	cmd.AddCommand(addressCmd)
 	return cmd
 }
 
