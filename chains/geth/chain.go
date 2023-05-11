@@ -3,35 +3,21 @@ package geth
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math/big"
-	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
-	ibccommitment "github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitmenttesthelper"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/simpletoken"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/relay/ethereum"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
 )
-
-type ChainConfig struct {
-	Chain  ethereum.ChainConfig `json:"chain"`
-	Prover ProverConfig         `json:"prover"`
-}
-
-type ProverConfig struct {
-	Type string `json:"@type"`
-}
 
 type Chain struct {
 	chainID        int64
@@ -39,24 +25,12 @@ type Chain struct {
 	mnemonicPhrase string
 	keys           map[uint32]*ecdsa.PrivateKey
 
-	ChainConfig ChainConfig
-
-	// Core Modules
-	IBCHandler    ibchandler.Ibchandler
-	IBCCommitment ibccommitment.Ibccommitmenttesthelper
-
-	// App Modules
 	SimpleToken   simpletoken.Simpletoken
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
 }
 
-func NewChain(chainConfig ChainConfig, client *client.ETHClient, mnemonicPhrase string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) *Chain {
-	ibcHandler, err := ibchandler.NewIbchandler(chainConfig.Chain.IBCAddress(), client)
-	if err != nil {
-		log.Print(err)
-		return nil
-	}
+func NewChain(client *client.ETHClient, ethChainId int64, mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) *Chain {
 	simpletoken, err := simpletoken.NewSimpletoken(common.HexToAddress(simpleTokenAddress), client)
 	if err != nil {
 		log.Print(err)
@@ -75,12 +49,9 @@ func NewChain(chainConfig ChainConfig, client *client.ETHClient, mnemonicPhrase 
 
 	return &Chain{
 		client:         client,
-		chainID:        chainConfig.Chain.EthChainId,
-		ChainConfig:    chainConfig,
-		mnemonicPhrase: mnemonicPhrase,
+		chainID:        ethChainId,
+		mnemonicPhrase: mnemonic,
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
-
-		IBCHandler: *ibcHandler,
 
 		SimpleToken:   *simpletoken,
 		ICS20Transfer: *ics20transfer,
@@ -134,28 +105,12 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 	}
 }
 
-func InitializeChain(configFile string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
-	chainConfig, err := ParseChainConfig(configFile)
+func InitializeChain(rpcAddress string, ethChainID int64, mnemonic string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
+	ethClient, err := client.NewETHClient(rpcAddress)
 	if err != nil {
 		return nil, err
 	}
-	ethClient, err := client.NewETHClient(chainConfig.Chain.RpcAddr)
-	if err != nil {
-		return nil, err
-	}
-	chain := NewChain(*chainConfig, ethClient, chainConfig.Chain.HdwMnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	chain := NewChain(ethClient, ethChainID, mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
 
 	return chain, nil
-}
-
-func ParseChainConfig(configFile string) (*ChainConfig, error) {
-	var chainConfig ChainConfig
-	byt, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(byt, &chainConfig); err != nil {
-		return nil, err
-	}
-	return &chainConfig, nil
 }
