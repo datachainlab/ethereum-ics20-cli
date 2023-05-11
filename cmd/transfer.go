@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"math/big"
-	"strconv"
 	"strings"
 
 	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
@@ -13,58 +12,55 @@ import (
 )
 
 func transferCmd() *cobra.Command {
+	var configFile, ics20BankAddress, ics20TransferBankAddress string
+	var fromIndex uint32
+	var toAddress string
+	var amount int64
+	var tokenAddress string
+	var portID string
+	var channelID string
+	var timeout uint64
 	cmd := &cobra.Command{
 		Use:   "transfer",
-		Short: "transfer token",
-		Long:  "Usage: transfer <configDir> <ics20BankAddress> <ics20TransferBankAddress> <fromIndex> <toAddress> <amount> <tokenAddress> <portID> <channelID> <timeout>",
-		Args:  cobra.ExactArgs(10),
+		Short: "transfer token from one account to another chain's wallet",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			configDir := args[0]
-			ics20BankAddress := args[1]
-			ics20TransferBankAddress := args[2]
-			fromIndex, err := strconv.ParseUint(args[3], 10, 64)
-			if err != nil {
-				return err
-			}
-			toAddress := args[4]
-			amount, err := strconv.ParseInt(args[5], 10, 64)
-			if err != nil {
-				return err
-			}
-			tokenAddress := args[6]
-			portID := args[7]
-			channelID := args[8]
-			timeout, err := strconv.ParseUint(args[9], 10, 64)
-			if err != nil {
-				return err
-			}
-			if err := Transfer(configDir, ics20BankAddress, ics20TransferBankAddress, uint32(fromIndex), toAddress, amount, tokenAddress, portID, channelID, timeout); err != nil {
+			ctx := cmd.Context()
+			if err := Transfer(ctx, configFile, ics20BankAddress, ics20TransferBankAddress, uint32(fromIndex), toAddress, amount, tokenAddress, portID, channelID, timeout); err != nil {
 				return err
 			}
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&configFile, "config", "", "config file path")
+	cmd.Flags().StringVar(&ics20BankAddress, "ics20-bank-address", "", "address of ics20 bank contract")
+	cmd.Flags().StringVar(&ics20TransferBankAddress, "ics20-transfer-bank-address", "", "address of ics20 transfer bank contract")
+	cmd.Flags().Uint32Var(&fromIndex, "from-index", 0, "index of the from wallet")
+	cmd.Flags().StringVar(&toAddress, "to-address", "", "address of the recipient")
+	cmd.Flags().Int64Var(&amount, "amount", 0, "amount of the token")
+	cmd.Flags().StringVar(&tokenAddress, "token-address", "", "address of the token contract")
+	cmd.Flags().StringVar(&portID, "port-id", "", "port id")
+	cmd.Flags().StringVar(&channelID, "channel-id", "", "channel id")
+	cmd.Flags().Uint64Var(&timeout, "timeout", 0, "timeout")
 
 	return cmd
 }
 
-func Transfer(configDir, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeout uint64) error {
-	chainA, err := geth.InitializeChains(configDir, geth.PathSrc, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
+func Transfer(ctx context.Context, configFile, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeout uint64) error {
+	chainA, err := geth.InitializeChains(configFile, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
 	const (
 		relayer  = 0
 		deployer = 0
 	)
-	_, err = chainA.SimpleToken.Approve(chainA.TxOpts(ctx, deployer), common.HexToAddress(ics20BankAddress), big.NewInt(amount))
+	tx, err := chainA.SimpleToken.Approve(chainA.TxOpts(ctx, deployer), common.HexToAddress(ics20BankAddress), big.NewInt(amount))
 	if err != nil {
 		return err
 	}
-	log.Println("1. token approve success")
+	log.Printf("1. token approve success (TxHash: %s)\n", tx.Hash().Hex())
 
-	_, err = chainA.ICS20Bank.Deposit(
+	tx, err = chainA.ICS20Bank.Deposit(
 		chainA.TxOpts(ctx, deployer),
 		common.HexToAddress(tokenAddress),
 		big.NewInt(amount),
@@ -73,10 +69,10 @@ func Transfer(configDir, ics20BankAddress, ics20TransferBankAddress string, from
 	if err != nil {
 		return err
 	}
-	log.Println("2. deposit success")
+	log.Printf("2. deposit success (TxHash: %s)\n", tx.Hash().Hex())
 
 	baseDenom := strings.ToLower(tokenAddress)
-	_, err = chainA.ICS20Transfer.SendTransfer(
+	tx, err = chainA.ICS20Transfer.SendTransfer(
 		chainA.TxOpts(ctx, fromIndex),
 		baseDenom,
 		uint64(amount),
@@ -87,7 +83,7 @@ func Transfer(configDir, ics20BankAddress, ics20TransferBankAddress string, from
 	if err != nil {
 		return err
 	}
-	log.Println("3. sendTransfer success")
+	log.Printf("3. sendTransfer success (TxHash: %s)\n", tx.Hash().Hex())
 
 	return nil
 }

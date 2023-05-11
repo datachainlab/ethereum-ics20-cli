@@ -9,31 +9,31 @@ import (
 )
 
 func chainCmd() *cobra.Command {
+	var rpcAddress string
 	cmd := &cobra.Command{
 		Use:   "chain",
 		Short: "chain info",
 	}
 	heightCmd := &cobra.Command{
 		Use:   "height",
-		Short: "get the current height of the blockchain",
-		Long:  "Usage: height <rpcAddress>",
-		Args:  cobra.ExactArgs(1),
+		Short: "Get the current height of the blockchain",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			rpcAddress := args[0]
-			headerNumber, err := headerNumber(rpcAddress)
+			ctx := cmd.Context()
+			headerNumber, err := headerNumber(ctx, rpcAddress)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%d", headerNumber)
+			fmt.Printf("%d\n", headerNumber)
 			return nil
 		},
 	}
+	heightCmd.Flags().StringVar(&rpcAddress, "rpc-address", "", "Ethereum RPC Address")
+
 	cmd.AddCommand(heightCmd)
 	return cmd
 }
 
-func headerNumber(rpcAddress string) (uint64, error) {
-	ctx := context.Background()
+func headerNumber(ctx context.Context, rpcAddress string) (uint64, error) {
 	ethClient, err := client.NewETHClient(rpcAddress)
 	if err != nil {
 		return 0, err

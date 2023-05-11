@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -11,26 +10,17 @@ import (
 )
 
 func walletCmd() *cobra.Command {
+	var configFile string
+	var walletIndex uint64
 	cmd := &cobra.Command{
 		Use:   "wallet",
 		Short: "wallet commands",
 	}
 	addressCmd := &cobra.Command{
 		Use:   "address",
-		Short: "address of the wallet",
-		Long:  "Usage: address <configDir> <chainIndex> <walletIndex>",
-		Args:  cobra.ExactArgs(3),
+		Short: "Get address by specifying an index of the wallet",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			configDir := args[0]
-			chainIndex, err := strconv.ParseUint(args[1], 10, 64)
-			if err != nil {
-				return err
-			}
-			walletIndex, err := strconv.ParseUint(args[2], 10, 64)
-			if err != nil {
-				return err
-			}
-			address, err := address(configDir, chainIndex, walletIndex)
+			address, err := address(configFile, walletIndex)
 			if err != nil {
 				return err
 			}
@@ -38,20 +28,19 @@ func walletCmd() *cobra.Command {
 			return nil
 		},
 	}
+	addressCmd.Flags().StringVar(&configFile, "config", "", "config file path")
+	addressCmd.Flags().Uint64Var(&walletIndex, "wallet-index", 0, "index of the wallet")
+
 	cmd.AddCommand(addressCmd)
 	return cmd
 }
 
-func address(configDir string, chainIndex, walletIndex uint64) (string, error) {
-	chainConfigs, err := geth.ParseChainConfigs(fmt.Sprintf("%s/%s", configDir, "chains"))
+func address(configFile string, walletIndex uint64) (string, error) {
+	chainConfig, err := geth.ParseChainConfig(configFile)
 	if err != nil {
 		return "", err
 	}
-	chain := chainConfigs[chainIndex]
-	if chain == nil {
-		return "", fmt.Errorf("chain not found")
-	}
-	key, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(chain.Chain.HdwMnemonic, fmt.Sprintf("m/44'/60'/0'/0/%d", walletIndex))
+	key, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(chainConfig.Chain.HdwMnemonic, fmt.Sprintf("m/44'/60'/0'/0/%d", walletIndex))
 	if err != nil {
 		return "", err
 	}

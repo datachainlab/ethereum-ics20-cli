@@ -12,24 +12,24 @@ import (
 )
 
 func balanceCmd() *cobra.Command {
+	var rpcAddress, ics20BankAddress, walletAddress, tokenAddress string
 	cmd := &cobra.Command{
 		Use:   "balance",
-		Short: "balance of the address",
-		Long:  "Usage: balance <rpcAddress> <ics20BankAddress> <walletAddress> <tokenAddress>",
-		Args:  cobra.ExactArgs(4),
+		Short: "Query the account balance of the address",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			rpcAddress := args[0]
-			ics20BankAddress := args[1]
-			walletAddress := args[2]
-			tokenAddress := args[3]
 			balance, err := balanceOf(rpcAddress, ics20BankAddress, walletAddress, tokenAddress)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%d", balance)
+			fmt.Printf("%d\n", balance)
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&rpcAddress, "rpc-address", "", "Ethereum RPC Address")
+	cmd.Flags().StringVar(&ics20BankAddress, "ics20-bank-address", "", "Ics20Bank contract address")
+	cmd.Flags().StringVar(&walletAddress, "wallet-address", "", "Wallet address")
+	cmd.Flags().StringVar(&tokenAddress, "token-address", "", "Token address")
+
 	return cmd
 }
 

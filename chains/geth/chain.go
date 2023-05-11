@@ -24,13 +24,6 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
 )
 
-type PathSrcDst int
-
-const (
-	PathSrc PathSrcDst = iota
-	PathDst
-)
-
 type ChainConfig struct {
 	Chain  ethereum.ChainConfig `json:"chain"`
 	Prover ProverConfig         `json:"prover"`
@@ -141,38 +134,28 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 	}
 }
 
-func InitializeChains(configDir string, path PathSrcDst, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
-	chainConfigs, err := ParseChainConfigs(fmt.Sprintf("%s/%s", configDir, "chains"))
+func InitializeChains(configFile string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
+	chainConfig, err := ParseChainConfig(configFile)
 	if err != nil {
 		return nil, err
 	}
-	config := chainConfigs[path]
-	ethClient, err := client.NewETHClient(config.Chain.RpcAddr)
+	ethClient, err := client.NewETHClient(chainConfig.Chain.RpcAddr)
 	if err != nil {
 		return nil, err
 	}
-	chain := NewChain(*config, ethClient, config.Chain.HdwMnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	chain := NewChain(*chainConfig, ethClient, chainConfig.Chain.HdwMnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
 
 	return chain, nil
 }
 
-func ParseChainConfigs(configDir string) ([]*ChainConfig, error) {
-	files, err := os.ReadDir(configDir)
+func ParseChainConfig(configFile string) (*ChainConfig, error) {
+	var chainConfig ChainConfig
+	byt, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
-	var chainConfigs []*ChainConfig
-	for _, f := range files {
-		var chainConfig ChainConfig
-		pth := fmt.Sprintf("%s/%s", configDir, f.Name())
-		byt, err := os.ReadFile(pth)
-		if err != nil {
-			return nil, err
-		}
-		if err := json.Unmarshal(byt, &chainConfig); err != nil {
-			return nil, err
-		}
-		chainConfigs = append(chainConfigs, &chainConfig)
+	if err := json.Unmarshal(byt, &chainConfig); err != nil {
+		return nil, err
 	}
-	return chainConfigs, nil
+	return &chainConfig, nil
 }
