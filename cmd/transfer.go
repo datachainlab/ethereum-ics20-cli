@@ -46,7 +46,7 @@ func transferCmd() *cobra.Command {
 }
 
 func Transfer(ctx context.Context, configFile, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeout uint64) error {
-	chainA, err := geth.InitializeChains(configFile, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	chainA, err := geth.InitializeChain(configFile, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
 	if err != nil {
 		return err
 	}

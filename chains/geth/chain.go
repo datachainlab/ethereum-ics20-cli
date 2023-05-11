@@ -134,7 +134,7 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 	}
 }
 
-func InitializeChains(configFile string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
+func InitializeChain(configFile string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
 	chainConfig, err := ParseChainConfig(configFile)
 	if err != nil {
 		return nil, err
