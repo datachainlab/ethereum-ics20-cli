@@ -28,6 +28,7 @@ func chainCmd() *cobra.Command {
 		},
 	}
 	heightCmd.Flags().StringVar(&rpcAddress, "rpc-address", "", "Ethereum RPC Address")
+	heightCmd.MarkFlagRequired("rpc-address")
 
 	cmd.AddCommand(heightCmd)
 	return cmd

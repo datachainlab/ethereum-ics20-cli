@@ -30,6 +30,9 @@ func walletCmd() *cobra.Command {
 	addressCmd.Flags().StringVar(&mnemonic, "mnemonic", "", "mnemonic phrase")
 	addressCmd.Flags().Uint64Var(&walletIndex, "wallet-index", 0, "index of the wallet")
 
+	addressCmd.MarkFlagRequired("mnemonic")
+	addressCmd.MarkFlagRequired("wallet-index")
+
 	cmd.AddCommand(addressCmd)
 	return cmd
 }

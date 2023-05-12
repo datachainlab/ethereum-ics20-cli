@@ -45,6 +45,19 @@ func transferCmd() *cobra.Command {
 	cmd.Flags().StringVar(&channelID, "channel-id", "", "channel id")
 	cmd.Flags().Uint64Var(&timeoutHeight, "timeout-height", 0, "timeout height")
 
+	cmd.MarkFlagRequired("rpc-address")
+	cmd.MarkFlagRequired("chain-id")
+	cmd.MarkFlagRequired("mnemonic")
+	cmd.MarkFlagRequired("ics20-bank-address")
+	cmd.MarkFlagRequired("ics20-transfer-bank-address")
+	cmd.MarkFlagRequired("from-index")
+	cmd.MarkFlagRequired("to-address")
+	cmd.MarkFlagRequired("amount")
+	cmd.MarkFlagRequired("token-address")
+	cmd.MarkFlagRequired("port-id")
+	cmd.MarkFlagRequired("channel-id")
+	cmd.MarkFlagRequired("timeout-height")
+
 	return cmd
 }
 
