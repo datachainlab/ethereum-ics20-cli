@@ -12,26 +12,29 @@ import (
 )
 
 func transferCmd() *cobra.Command {
-	var configFile, ics20BankAddress, ics20TransferBankAddress string
+	var rpcAddress, mnemonic, ics20BankAddress, ics20TransferBankAddress string
+	var chainID int64
 	var fromIndex uint32
 	var toAddress string
 	var amount int64
 	var tokenAddress string
 	var portID string
 	var channelID string
-	var timeout uint64
+	var timeoutHeight uint64
 	cmd := &cobra.Command{
 		Use:   "transfer",
 		Short: "transfer token from one account to another chain's wallet",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			ctx := cmd.Context()
-			if err := Transfer(ctx, configFile, ics20BankAddress, ics20TransferBankAddress, uint32(fromIndex), toAddress, amount, tokenAddress, portID, channelID, timeout); err != nil {
+			if err := Transfer(ctx, rpcAddress, chainID, mnemonic, ics20BankAddress, ics20TransferBankAddress, uint32(fromIndex), toAddress, amount, tokenAddress, portID, channelID, timeoutHeight); err != nil {
 				return err
 			}
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&configFile, "config", "", "config file path")
+	cmd.Flags().StringVar(&rpcAddress, "rpc-address", "", "config file path")
+	cmd.Flags().Int64Var(&chainID, "chain-id", 0, "chain id")
+	cmd.Flags().StringVar(&mnemonic, "mnemonic", "", "mnemonic phrase")
 	cmd.Flags().StringVar(&ics20BankAddress, "ics20-bank-address", "", "address of ics20 bank contract")
 	cmd.Flags().StringVar(&ics20TransferBankAddress, "ics20-transfer-bank-address", "", "address of ics20 transfer bank contract")
 	cmd.Flags().Uint32Var(&fromIndex, "from-index", 0, "index of the from wallet")
@@ -40,13 +43,26 @@ func transferCmd() *cobra.Command {
 	cmd.Flags().StringVar(&tokenAddress, "token-address", "", "address of the token contract")
 	cmd.Flags().StringVar(&portID, "port-id", "", "port id")
 	cmd.Flags().StringVar(&channelID, "channel-id", "", "channel id")
-	cmd.Flags().Uint64Var(&timeout, "timeout", 0, "timeout")
+	cmd.Flags().Uint64Var(&timeoutHeight, "timeout-height", 0, "timeout height")
+
+	cmd.MarkFlagRequired("rpc-address")
+	cmd.MarkFlagRequired("chain-id")
+	cmd.MarkFlagRequired("mnemonic")
+	cmd.MarkFlagRequired("ics20-bank-address")
+	cmd.MarkFlagRequired("ics20-transfer-bank-address")
+	cmd.MarkFlagRequired("from-index")
+	cmd.MarkFlagRequired("to-address")
+	cmd.MarkFlagRequired("amount")
+	cmd.MarkFlagRequired("token-address")
+	cmd.MarkFlagRequired("port-id")
+	cmd.MarkFlagRequired("channel-id")
+	cmd.MarkFlagRequired("timeout-height")
 
 	return cmd
 }
 
-func Transfer(ctx context.Context, configFile, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeout uint64) error {
-	chainA, err := geth.InitializeChain(configFile, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
+func Transfer(ctx context.Context, rpcAddress string, chainID int64, mnemonic, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeoutHeight uint64) error {
+	chainA, err := geth.InitializeChain(rpcAddress, chainID, mnemonic, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
 	if err != nil {
 		return err
 	}
@@ -78,7 +94,7 @@ func Transfer(ctx context.Context, configFile, ics20BankAddress, ics20TransferBa
 		uint64(amount),
 		common.HexToAddress(toAddress),
 		portID, channelID,
-		timeout+1000,
+		timeoutHeight,
 	)
 	if err != nil {
 		return err

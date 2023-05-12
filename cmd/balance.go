@@ -30,6 +30,11 @@ func balanceCmd() *cobra.Command {
 	cmd.Flags().StringVar(&walletAddress, "wallet-address", "", "Wallet address")
 	cmd.Flags().StringVar(&tokenAddress, "token-address", "", "Token address")
 
+	cmd.MarkFlagRequired("rpc-address")
+	cmd.MarkFlagRequired("ics20-bank-address")
+	cmd.MarkFlagRequired("wallet-address")
+	cmd.MarkFlagRequired("token-address")
+
 	return cmd
 }
 
