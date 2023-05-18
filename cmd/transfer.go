@@ -120,7 +120,7 @@ func waitAndCheckStatus(ctx context.Context, chain *geth.Chain, tx *types.Transa
 	if err != nil {
 		return err
 	}
-	if receipt.Status != 1 {
+	if receipt.Status != types.ReceiptStatusSuccessful {
 		return errors.New("tx status error")
 	}
 	return nil
