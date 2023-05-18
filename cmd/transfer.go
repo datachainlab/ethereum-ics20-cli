@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"log"
 	"math/big"
 	"strings"
 
 	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/spf13/cobra"
 )
 
@@ -75,6 +77,9 @@ func Transfer(ctx context.Context, rpcAddress string, chainID int64, mnemonic, i
 		return err
 	}
 	log.Printf("1. token approve success (TxHash: %s)\n", tx.Hash().Hex())
+	if err := waitAndCheckStatus(ctx, chainA, tx); err != nil {
+		return err
+	}
 
 	tx, err = chainA.ICS20Bank.Deposit(
 		chainA.TxOpts(ctx, deployer),
@@ -83,6 +88,9 @@ func Transfer(ctx context.Context, rpcAddress string, chainID int64, mnemonic, i
 		chainA.CallOpts(ctx, fromIndex).From,
 	)
 	if err != nil {
+		return err
+	}
+	if err := waitAndCheckStatus(ctx, chainA, tx); err != nil {
 		return err
 	}
 	log.Printf("2. deposit success (TxHash: %s)\n", tx.Hash().Hex())
@@ -99,7 +107,21 @@ func Transfer(ctx context.Context, rpcAddress string, chainID int64, mnemonic, i
 	if err != nil {
 		return err
 	}
+	if err := waitAndCheckStatus(ctx, chainA, tx); err != nil {
+		return err
+	}
 	log.Printf("3. sendTransfer success (TxHash: %s)\n", tx.Hash().Hex())
 
+	return nil
+}
+
+func waitAndCheckStatus(ctx context.Context, chain *geth.Chain, tx *types.Transaction) error {
+	receipt, err := chain.Client.WaitForReceiptAndGet(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if receipt.Status != 1 {
+		return errors.New("tx status error")
+	}
 	return nil
 }

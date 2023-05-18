@@ -21,10 +21,10 @@ import (
 
 type Chain struct {
 	chainID        int64
-	client         *client.ETHClient
 	mnemonicPhrase string
 	keys           map[uint32]*ecdsa.PrivateKey
 
+	Client        *client.ETHClient
 	SimpleToken   simpletoken.Simpletoken
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
@@ -48,11 +48,11 @@ func NewChain(client *client.ETHClient, ethChainId int64, mnemonic, simpleTokenA
 	}
 
 	return &Chain{
-		client:         client,
 		chainID:        ethChainId,
 		mnemonicPhrase: mnemonic,
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
 
+		Client:        client,
 		SimpleToken:   *simpletoken,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
