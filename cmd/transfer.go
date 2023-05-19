@@ -64,7 +64,7 @@ func transferCmd() *cobra.Command {
 }
 
 func Transfer(ctx context.Context, rpcAddress string, chainID int64, mnemonic, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeoutHeight uint64) error {
-	chainA, err := geth.InitializeChain(rpcAddress, chainID, mnemonic, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	chain, err := geth.InitializeChain(rpcAddress, chainID, mnemonic, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
 	if err != nil {
 		return err
 	}
@@ -72,32 +72,32 @@ func Transfer(ctx context.Context, rpcAddress string, chainID int64, mnemonic, i
 		relayer  = 0
 		deployer = 0
 	)
-	tx, err := chainA.SimpleToken.Approve(chainA.TxOpts(ctx, deployer), common.HexToAddress(ics20BankAddress), big.NewInt(amount))
+	tx, err := chain.SimpleToken.Approve(chain.TxOpts(ctx, deployer), common.HexToAddress(ics20BankAddress), big.NewInt(amount))
 	if err != nil {
 		return err
 	}
-	log.Printf("1. token approve success (TxHash: %s)\n", tx.Hash().Hex())
-	if err := waitAndCheckStatus(ctx, chainA, tx); err != nil {
+	if err := waitAndCheckStatus(ctx, chain, tx); err != nil {
 		return err
 	}
+	log.Printf("1. token approve success (TxHash: %s)\n", tx.Hash().Hex())
 
-	tx, err = chainA.ICS20Bank.Deposit(
-		chainA.TxOpts(ctx, deployer),
+	tx, err = chain.ICS20Bank.Deposit(
+		chain.TxOpts(ctx, deployer),
 		common.HexToAddress(tokenAddress),
 		big.NewInt(amount),
-		chainA.CallOpts(ctx, fromIndex).From,
+		chain.CallOpts(ctx, fromIndex).From,
 	)
 	if err != nil {
 		return err
 	}
-	if err := waitAndCheckStatus(ctx, chainA, tx); err != nil {
+	if err := waitAndCheckStatus(ctx, chain, tx); err != nil {
 		return err
 	}
 	log.Printf("2. deposit success (TxHash: %s)\n", tx.Hash().Hex())
 
 	baseDenom := strings.ToLower(tokenAddress)
-	tx, err = chainA.ICS20Transfer.SendTransfer(
-		chainA.TxOpts(ctx, fromIndex),
+	tx, err = chain.ICS20Transfer.SendTransfer(
+		chain.TxOpts(ctx, fromIndex),
 		baseDenom,
 		uint64(amount),
 		common.HexToAddress(toAddress),
@@ -107,7 +107,7 @@ func Transfer(ctx context.Context, rpcAddress string, chainID int64, mnemonic, i
 	if err != nil {
 		return err
 	}
-	if err := waitAndCheckStatus(ctx, chainA, tx); err != nil {
+	if err := waitAndCheckStatus(ctx, chain, tx); err != nil {
 		return err
 	}
 	log.Printf("3. sendTransfer success (TxHash: %s)\n", tx.Hash().Hex())
