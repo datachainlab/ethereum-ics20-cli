@@ -15,7 +15,6 @@ import (
 
 func transferCmd() *cobra.Command {
 	var rpcAddress, mnemonic, ics20BankAddress, ics20TransferBankAddress string
-	var chainID int64
 	var fromIndex uint32
 	var toAddress string
 	var amount int64
@@ -28,14 +27,13 @@ func transferCmd() *cobra.Command {
 		Short: "transfer token from one account to another chain's wallet",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			ctx := cmd.Context()
-			if err := Transfer(ctx, rpcAddress, chainID, mnemonic, ics20BankAddress, ics20TransferBankAddress, uint32(fromIndex), toAddress, amount, tokenAddress, portID, channelID, timeoutHeight); err != nil {
+			if err := Transfer(ctx, rpcAddress, mnemonic, ics20BankAddress, ics20TransferBankAddress, uint32(fromIndex), toAddress, amount, tokenAddress, portID, channelID, timeoutHeight); err != nil {
 				return err
 			}
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&rpcAddress, "rpc-address", "", "config file path")
-	cmd.Flags().Int64Var(&chainID, "chain-id", 0, "chain id")
 	cmd.Flags().StringVar(&mnemonic, "mnemonic", "", "mnemonic phrase")
 	cmd.Flags().StringVar(&ics20BankAddress, "ics20-bank-address", "", "address of ics20 bank contract")
 	cmd.Flags().StringVar(&ics20TransferBankAddress, "ics20-transfer-bank-address", "", "address of ics20 transfer bank contract")
@@ -63,8 +61,8 @@ func transferCmd() *cobra.Command {
 	return cmd
 }
 
-func Transfer(ctx context.Context, rpcAddress string, chainID int64, mnemonic, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeoutHeight uint64) error {
-	chain, err := geth.InitializeChain(rpcAddress, chainID, mnemonic, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
+func Transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeoutHeight uint64) error {
+	chain, err := geth.InitializeChain(ctx, rpcAddress, mnemonic, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
 	if err != nil {
 		return err
 	}

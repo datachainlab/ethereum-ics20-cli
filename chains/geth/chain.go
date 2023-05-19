@@ -105,12 +105,17 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 	}
 }
 
-func InitializeChain(rpcAddress string, ethChainID int64, mnemonic string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
+func InitializeChain(ctx context.Context, rpcAddress string, mnemonic string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
 	ethClient, err := client.NewETHClient(rpcAddress)
 	if err != nil {
 		return nil, err
 	}
-	chain := NewChain(ethClient, ethChainID, mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	ethChainID, err := ethClient.ChainID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	chain := NewChain(ethClient, ethChainID.Int64(), mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
 
 	return chain, nil
 }
