@@ -21,10 +21,10 @@ import (
 
 type Chain struct {
 	chainID        int64
-	client         *client.ETHClient
 	mnemonicPhrase string
 	keys           map[uint32]*ecdsa.PrivateKey
 
+	Client        *client.ETHClient
 	SimpleToken   simpletoken.Simpletoken
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
@@ -48,11 +48,11 @@ func NewChain(client *client.ETHClient, ethChainId int64, mnemonic, simpleTokenA
 	}
 
 	return &Chain{
-		client:         client,
 		chainID:        ethChainId,
 		mnemonicPhrase: mnemonic,
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
 
+		Client:        client,
 		SimpleToken:   *simpletoken,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
@@ -105,12 +105,17 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 	}
 }
 
-func InitializeChain(rpcAddress string, ethChainID int64, mnemonic string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
+func InitializeChain(ctx context.Context, rpcAddress string, mnemonic string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
 	ethClient, err := client.NewETHClient(rpcAddress)
 	if err != nil {
 		return nil, err
 	}
-	chain := NewChain(ethClient, ethChainID, mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	ethChainID, err := ethClient.ChainID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	chain := NewChain(ethClient, ethChainID.Int64(), mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
 
 	return chain, nil
 }
