@@ -39,7 +39,7 @@ func balanceCmd() *cobra.Command {
 }
 
 func balanceOf(rpcAddress, ics20BankAddress, walletAddress, denom string) (*big.Int, error) {
-	baseDenom := strings.ToLower(denom)
+	denom = strings.ToLower(denom)
 	ethClient, err := client.NewETHClient(rpcAddress)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func balanceOf(rpcAddress, ics20BankAddress, walletAddress, denom string) (*big.
 	if err != nil {
 		return nil, err
 	}
-	balance, err := ics20bank.BalanceOf(nil, common.HexToAddress(walletAddress), baseDenom)
+	balance, err := ics20bank.BalanceOf(nil, common.HexToAddress(walletAddress), denom)
 	if err != nil {
 		return nil, err
 	}
