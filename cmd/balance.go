@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
@@ -39,7 +38,6 @@ func balanceCmd() *cobra.Command {
 }
 
 func balanceOf(rpcAddress, ics20BankAddress, walletAddress, denom string) (*big.Int, error) {
-	denom = strings.ToLower(denom)
 	ethClient, err := client.NewETHClient(rpcAddress)
 	if err != nil {
 		return nil, err

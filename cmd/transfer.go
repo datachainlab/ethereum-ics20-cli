@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"math/big"
-	"strings"
 
 	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
 	"github.com/ethereum/go-ethereum/common"
@@ -92,7 +91,6 @@ func Transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress
 	}
 	log.Printf("2. deposit success (TxHash: %s)\n", tx.Hash().Hex())
 
-	denom = strings.ToLower(denom)
 	tx, err = chain.ICS20Transfer.SendTransfer(
 		chain.TxOpts(ctx, fromIndex),
 		denom,
