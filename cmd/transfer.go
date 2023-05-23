@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"math/big"
-	"strings"
 
 	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,7 +17,7 @@ func transferCmd() *cobra.Command {
 	var fromIndex uint32
 	var toAddress string
 	var amount int64
-	var tokenAddress string
+	var denom string
 	var portID string
 	var channelID string
 	var timeoutHeight uint64
@@ -27,7 +26,7 @@ func transferCmd() *cobra.Command {
 		Short: "transfer token from one account to another chain's wallet",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			ctx := cmd.Context()
-			if err := Transfer(ctx, rpcAddress, mnemonic, ics20BankAddress, ics20TransferBankAddress, uint32(fromIndex), toAddress, amount, tokenAddress, portID, channelID, timeoutHeight); err != nil {
+			if err := Transfer(ctx, rpcAddress, mnemonic, ics20BankAddress, ics20TransferBankAddress, uint32(fromIndex), toAddress, amount, denom, portID, channelID, timeoutHeight); err != nil {
 				return err
 			}
 			return nil
@@ -40,7 +39,7 @@ func transferCmd() *cobra.Command {
 	cmd.Flags().Uint32Var(&fromIndex, "from-index", 0, "index of the from wallet")
 	cmd.Flags().StringVar(&toAddress, "to-address", "", "address of the recipient")
 	cmd.Flags().Int64Var(&amount, "amount", 0, "amount of the token")
-	cmd.Flags().StringVar(&tokenAddress, "token-address", "", "address of the token contract")
+	cmd.Flags().StringVar(&denom, "denom", "", "denom of the token")
 	cmd.Flags().StringVar(&portID, "port-id", "", "port id")
 	cmd.Flags().StringVar(&channelID, "channel-id", "", "channel id")
 	cmd.Flags().Uint64Var(&timeoutHeight, "timeout-height", 0, "timeout height")
@@ -53,7 +52,7 @@ func transferCmd() *cobra.Command {
 	cmd.MarkFlagRequired("from-index")
 	cmd.MarkFlagRequired("to-address")
 	cmd.MarkFlagRequired("amount")
-	cmd.MarkFlagRequired("token-address")
+	cmd.MarkFlagRequired("denom")
 	cmd.MarkFlagRequired("port-id")
 	cmd.MarkFlagRequired("channel-id")
 	cmd.MarkFlagRequired("timeout-height")
@@ -61,13 +60,12 @@ func transferCmd() *cobra.Command {
 	return cmd
 }
 
-func Transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, tokenAddress, portID, channelID string, timeoutHeight uint64) error {
-	chain, err := geth.InitializeChain(ctx, rpcAddress, mnemonic, tokenAddress, ics20TransferBankAddress, ics20BankAddress)
+func Transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, denom, portID, channelID string, timeoutHeight uint64) error {
+	chain, err := geth.InitializeChain(ctx, rpcAddress, mnemonic, denom, ics20TransferBankAddress, ics20BankAddress)
 	if err != nil {
 		return err
 	}
 	const (
-		relayer  = 0
 		deployer = 0
 	)
 	tx, err := chain.SimpleToken.Approve(chain.TxOpts(ctx, deployer), common.HexToAddress(ics20BankAddress), big.NewInt(amount))
@@ -81,7 +79,7 @@ func Transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress
 
 	tx, err = chain.ICS20Bank.Deposit(
 		chain.TxOpts(ctx, deployer),
-		common.HexToAddress(tokenAddress),
+		common.HexToAddress(denom),
 		big.NewInt(amount),
 		chain.CallOpts(ctx, fromIndex).From,
 	)
@@ -93,10 +91,9 @@ func Transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress
 	}
 	log.Printf("2. deposit success (TxHash: %s)\n", tx.Hash().Hex())
 
-	baseDenom := strings.ToLower(tokenAddress)
 	tx, err = chain.ICS20Transfer.SendTransfer(
 		chain.TxOpts(ctx, fromIndex),
-		baseDenom,
+		denom,
 		uint64(amount),
 		common.HexToAddress(toAddress),
 		portID, channelID,

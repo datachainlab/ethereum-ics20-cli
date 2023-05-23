@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
@@ -12,12 +11,12 @@ import (
 )
 
 func balanceCmd() *cobra.Command {
-	var rpcAddress, ics20BankAddress, walletAddress, tokenAddress string
+	var rpcAddress, ics20BankAddress, walletAddress, denom string
 	cmd := &cobra.Command{
 		Use:   "balance",
 		Short: "Query the account balance of the address",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			balance, err := balanceOf(rpcAddress, ics20BankAddress, walletAddress, tokenAddress)
+			balance, err := balanceOf(rpcAddress, ics20BankAddress, walletAddress, denom)
 			if err != nil {
 				return err
 			}
@@ -28,18 +27,17 @@ func balanceCmd() *cobra.Command {
 	cmd.Flags().StringVar(&rpcAddress, "rpc-address", "", "Ethereum RPC Address")
 	cmd.Flags().StringVar(&ics20BankAddress, "ics20-bank-address", "", "Ics20Bank contract address")
 	cmd.Flags().StringVar(&walletAddress, "wallet-address", "", "Wallet address")
-	cmd.Flags().StringVar(&tokenAddress, "token-address", "", "Token address")
+	cmd.Flags().StringVar(&denom, "denom", "", "Token denom")
 
 	cmd.MarkFlagRequired("rpc-address")
 	cmd.MarkFlagRequired("ics20-bank-address")
 	cmd.MarkFlagRequired("wallet-address")
-	cmd.MarkFlagRequired("token-address")
+	cmd.MarkFlagRequired("denom")
 
 	return cmd
 }
 
-func balanceOf(rpcAddress, ics20BankAddress, walletAddress, tokenAddress string) (*big.Int, error) {
-	baseDenom := strings.ToLower(tokenAddress)
+func balanceOf(rpcAddress, ics20BankAddress, walletAddress, denom string) (*big.Int, error) {
 	ethClient, err := client.NewETHClient(rpcAddress)
 	if err != nil {
 		return nil, err
@@ -48,7 +46,7 @@ func balanceOf(rpcAddress, ics20BankAddress, walletAddress, tokenAddress string)
 	if err != nil {
 		return nil, err
 	}
-	balance, err := ics20bank.BalanceOf(nil, common.HexToAddress(walletAddress), baseDenom)
+	balance, err := ics20bank.BalanceOf(nil, common.HexToAddress(walletAddress), denom)
 	if err != nil {
 		return nil, err
 	}
