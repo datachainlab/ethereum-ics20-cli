@@ -11,10 +11,10 @@ func Execute() error {
 	}
 
 	rootCmd.AddCommand(
-		balanceCmd(),
-		transferCmd(),
 		walletCmd(),
 		chainCmd(),
+		erc20Cmd(),
+		ics20Cmd(),
 	)
 
 	return rootCmd.Execute()

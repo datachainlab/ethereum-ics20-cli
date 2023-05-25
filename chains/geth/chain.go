@@ -10,12 +10,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/simpletoken"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
 )
 
@@ -25,13 +26,13 @@ type Chain struct {
 	keys           map[uint32]*ecdsa.PrivateKey
 
 	Client        *client.ETHClient
-	SimpleToken   simpletoken.Simpletoken
+	Erc20Token    erc20.Erc20
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
 }
 
 func NewChain(client *client.ETHClient, ethChainId int64, mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) *Chain {
-	simpletoken, err := simpletoken.NewSimpletoken(common.HexToAddress(simpleTokenAddress), client)
+	erc20Token, err := erc20.NewErc20(common.HexToAddress(simpleTokenAddress), client)
 	if err != nil {
 		log.Print(err)
 		return nil
@@ -53,7 +54,7 @@ func NewChain(client *client.ETHClient, ethChainId int64, mnemonic, simpleTokenA
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
 
 		Client:        client,
-		SimpleToken:   *simpletoken,
+		Erc20Token:    *erc20Token,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
 	}
@@ -118,4 +119,15 @@ func InitializeChain(ctx context.Context, rpcAddress string, mnemonic string, si
 	chain := NewChain(ethClient, ethChainID.Int64(), mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
 
 	return chain, nil
+}
+
+func WaitAndCheckStatus(ctx context.Context, chain *Chain, tx *types.Transaction) error {
+	receipt, err := chain.Client.WaitForReceiptAndGet(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return errors.New("tx status error")
+	}
+	return nil
 }
