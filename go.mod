@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/ethereum/go-ethereum v1.11.6
-	github.com/hyperledger-labs/yui-ibc-solidity v0.3.4
+	github.com/hyperledger-labs/yui-ibc-solidity v0.3.6
 	github.com/spf13/cobra v1.7.0
 )
 
