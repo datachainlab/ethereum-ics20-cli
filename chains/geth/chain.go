@@ -85,6 +85,17 @@ func (chain *Chain) CallOpts(ctx context.Context, index uint32) *bind.CallOpts {
 	}
 }
 
+func (chain *Chain) WaitAndCheckStatus(ctx context.Context, tx *types.Transaction) error {
+	receipt, err := chain.Client.WaitForReceiptAndGet(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return errors.New("tx status error")
+	}
+	return nil
+}
+
 func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Context) *bind.TransactOpts {
 	signer := gethtypes.LatestSignerForChainID(chainID)
 	addr := gethcrypto.PubkeyToAddress(prv.PublicKey)
@@ -119,15 +130,4 @@ func InitializeChain(ctx context.Context, rpcAddress string, mnemonic string, si
 	chain := NewChain(ethClient, ethChainID.Int64(), mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
 
 	return chain, nil
-}
-
-func WaitAndCheckStatus(ctx context.Context, chain *Chain, tx *types.Transaction) error {
-	receipt, err := chain.Client.WaitForReceiptAndGet(ctx, tx)
-	if err != nil {
-		return err
-	}
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		return errors.New("tx status error")
-	}
-	return nil
 }

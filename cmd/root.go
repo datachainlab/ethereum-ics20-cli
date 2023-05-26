@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"github.com/datachainlab/ethereum-ics20-cli/cmd/erc20"
+	"github.com/datachainlab/ethereum-ics20-cli/cmd/ics20"
 	"github.com/spf13/cobra"
 )
 
@@ -13,8 +15,8 @@ func Execute() error {
 	rootCmd.AddCommand(
 		walletCmd(),
 		chainCmd(),
-		erc20Cmd(),
-		ics20Cmd(),
+		erc20.Erc20Cmd(),
+		ics20.Ics20Cmd(),
 	)
 
 	return rootCmd.Execute()
