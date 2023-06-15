@@ -4,7 +4,6 @@
 ```bash
 $ git clone https://github.com/datachainlab/ethereum-ics20-cli.git
 $ cd ethereum-ics20-cli
-$ git checkout v0.0.3
 $ go install
 CLI="ethereum-ics20-cli"
 ```
