@@ -5,13 +5,11 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
@@ -31,33 +29,41 @@ type Chain struct {
 	ICS20Bank     ics20bank.Ics20bank
 }
 
-func NewChain(client *client.ETHClient, ethChainId int64, mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) *Chain {
-	erc20Token, err := erc20.NewErc20(common.HexToAddress(simpleTokenAddress), client)
-	if err != nil {
-		log.Print(err)
-		return nil
-	}
-	ics20transfer, err := ics20transferbank.NewIcs20transferbank(common.HexToAddress(ics20TransferBankAddress), client)
-	if err != nil {
-		log.Print(err)
-		return nil
-	}
-	ics20bank, err := ics20bank.NewIcs20bank(common.HexToAddress(ics20BankAddress), client)
-	if err != nil {
-		log.Print(err)
-		return nil
-	}
-
+func NewChain(client *client.ETHClient, ethChainId int64, mnemonic string) *Chain {
 	return &Chain{
 		chainID:        ethChainId,
 		mnemonicPhrase: mnemonic,
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
 
-		Client:        client,
-		Erc20Token:    *erc20Token,
-		ICS20Transfer: *ics20transfer,
-		ICS20Bank:     *ics20bank,
+		Client: client,
 	}
+}
+
+func (chain *Chain) AddERC20Token(erc20TokenAddress string) error {
+	erc20Token, err := erc20.NewErc20(common.HexToAddress(erc20TokenAddress), chain.Client)
+	if err != nil {
+		return err
+	}
+	chain.Erc20Token = *erc20Token
+	return nil
+}
+
+func (chain *Chain) AddICS20TransferBank(ics20TransferBankAddress string) error {
+	ics20transfer, err := ics20transferbank.NewIcs20transferbank(common.HexToAddress(ics20TransferBankAddress), chain.Client)
+	if err != nil {
+		return err
+	}
+	chain.ICS20Transfer = *ics20transfer
+	return nil
+}
+
+func (chain *Chain) AddICS20Bank(ics20BankAddress string) error {
+	ics20bank, err := ics20bank.NewIcs20bank(common.HexToAddress(ics20BankAddress), chain.Client)
+	if err != nil {
+		return err
+	}
+	chain.ICS20Bank = *ics20bank
+	return nil
 }
 
 func (chain *Chain) TxOpts(ctx context.Context, index uint32) *bind.TransactOpts {
@@ -97,13 +103,13 @@ func (chain *Chain) WaitAndCheckStatus(ctx context.Context, tx *types.Transactio
 }
 
 func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Context) *bind.TransactOpts {
-	signer := gethtypes.LatestSignerForChainID(chainID)
+	signer := types.LatestSignerForChainID(chainID)
 	addr := gethcrypto.PubkeyToAddress(prv.PublicKey)
 	return func(ctx context.Context) *bind.TransactOpts {
 		return &bind.TransactOpts{
 			From:     addr,
 			GasLimit: 6382056,
-			Signer: func(address common.Address, tx *gethtypes.Transaction) (*gethtypes.Transaction, error) {
+			Signer: func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 				if address != addr {
 					return nil, errors.New("not authorized to sign this account")
 				}
@@ -117,7 +123,7 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 	}
 }
 
-func InitializeChain(ctx context.Context, rpcAddress string, mnemonic string, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress string) (*Chain, error) {
+func InitializeChain(ctx context.Context, rpcAddress string, mnemonic string) (*Chain, error) {
 	ethClient, err := client.NewETHClient(rpcAddress)
 	if err != nil {
 		return nil, err
@@ -127,7 +133,7 @@ func InitializeChain(ctx context.Context, rpcAddress string, mnemonic string, si
 		return nil, err
 	}
 
-	chain := NewChain(ethClient, ethChainID.Int64(), mnemonic, simpleTokenAddress, ics20TransferBankAddress, ics20BankAddress)
+	chain := NewChain(ethClient, ethChainID.Int64(), mnemonic)
 
 	return chain, nil
 }

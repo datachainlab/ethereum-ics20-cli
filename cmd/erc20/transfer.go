@@ -46,11 +46,14 @@ func transferCmd() *cobra.Command {
 }
 
 func transfer(ctx context.Context, rpcAddress string, mnemonic string, fromIndex uint32, toAddress string, amount int64, denom string) error {
-	dummyAddress := "0x0"
-	chain, err := geth.InitializeChain(ctx, rpcAddress, mnemonic, denom, dummyAddress, dummyAddress)
+	chain, err := geth.InitializeChain(ctx, rpcAddress, mnemonic)
 	if err != nil {
 		return err
 	}
+	if err := chain.AddERC20Token(denom); err != nil {
+		return err
+	}
+
 	tx, err := chain.Erc20Token.Transfer(chain.TxOpts(ctx, fromIndex), common.HexToAddress(toAddress), big.NewInt(amount))
 	if err != nil {
 		return err

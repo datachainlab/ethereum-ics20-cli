@@ -59,8 +59,17 @@ func transferCmd() *cobra.Command {
 }
 
 func transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress, ics20TransferBankAddress string, fromIndex uint32, toAddress string, amount int64, denom, portID, channelID string, timeoutHeight uint64) error {
-	chain, err := geth.InitializeChain(ctx, rpcAddress, mnemonic, denom, ics20TransferBankAddress, ics20BankAddress)
+	chain, err := geth.InitializeChain(ctx, rpcAddress, mnemonic)
 	if err != nil {
+		return err
+	}
+	if err := chain.AddERC20Token(denom); err != nil {
+		return err
+	}
+	if err := chain.AddICS20TransferBank(ics20TransferBankAddress); err != nil {
+		return err
+	}
+	if err := chain.AddICS20Bank(ics20BankAddress); err != nil {
 		return err
 	}
 
