@@ -12,9 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
 )
 
@@ -23,10 +20,7 @@ type Chain struct {
 	mnemonicPhrase string
 	keys           map[uint32]*ecdsa.PrivateKey
 
-	Client        *client.ETHClient
-	Erc20Token    erc20.Erc20
-	ICS20Transfer ics20transferbank.Ics20transferbank
-	ICS20Bank     ics20bank.Ics20bank
+	Client *client.ETHClient
 }
 
 func NewChain(client *client.ETHClient, ethChainId int64, mnemonic string) *Chain {
@@ -37,33 +31,6 @@ func NewChain(client *client.ETHClient, ethChainId int64, mnemonic string) *Chai
 
 		Client: client,
 	}
-}
-
-func (chain *Chain) AddERC20Token(erc20TokenAddress string) error {
-	erc20Token, err := erc20.NewErc20(common.HexToAddress(erc20TokenAddress), chain.Client)
-	if err != nil {
-		return err
-	}
-	chain.Erc20Token = *erc20Token
-	return nil
-}
-
-func (chain *Chain) AddICS20TransferBank(ics20TransferBankAddress string) error {
-	ics20transfer, err := ics20transferbank.NewIcs20transferbank(common.HexToAddress(ics20TransferBankAddress), chain.Client)
-	if err != nil {
-		return err
-	}
-	chain.ICS20Transfer = *ics20transfer
-	return nil
-}
-
-func (chain *Chain) AddICS20Bank(ics20BankAddress string) error {
-	ics20bank, err := ics20bank.NewIcs20bank(common.HexToAddress(ics20BankAddress), chain.Client)
-	if err != nil {
-		return err
-	}
-	chain.ICS20Bank = *ics20bank
-	return nil
 }
 
 func (chain *Chain) TxOpts(ctx context.Context, index uint32) *bind.TransactOpts {

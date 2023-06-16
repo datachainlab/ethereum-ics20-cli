@@ -7,6 +7,9 @@ import (
 
 	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
 	"github.com/spf13/cobra"
 )
 
@@ -63,18 +66,21 @@ func transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress
 	if err != nil {
 		return err
 	}
-	if err := chain.AddERC20Token(denom); err != nil {
+	erc20Token, err := erc20.NewErc20(common.HexToAddress(denom), chain.Client)
+	if err != nil {
 		return err
 	}
-	if err := chain.AddICS20TransferBank(ics20TransferBankAddress); err != nil {
+	ics20Transfer, err := ics20transferbank.NewIcs20transferbank(common.HexToAddress(ics20TransferBankAddress), chain.Client)
+	if err != nil {
 		return err
 	}
-	if err := chain.AddICS20Bank(ics20BankAddress); err != nil {
+	ics20Bank, err := ics20bank.NewIcs20bank(common.HexToAddress(ics20BankAddress), chain.Client)
+	if err != nil {
 		return err
 	}
 
 	if common.IsHexAddress(denom) {
-		tx, err := chain.Erc20Token.Approve(chain.TxOpts(ctx, fromIndex), common.HexToAddress(ics20BankAddress), big.NewInt(amount))
+		tx, err := erc20Token.Approve(chain.TxOpts(ctx, fromIndex), common.HexToAddress(ics20BankAddress), big.NewInt(amount))
 		if err != nil {
 			return err
 		}
@@ -83,7 +89,7 @@ func transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress
 		}
 		log.Printf("Token approve success (TxHash: %s)\n", tx.Hash().Hex())
 
-		tx, err = chain.ICS20Bank.Deposit(
+		tx, err = ics20Bank.Deposit(
 			chain.TxOpts(ctx, fromIndex),
 			common.HexToAddress(denom),
 			big.NewInt(amount),
@@ -98,7 +104,7 @@ func transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress
 		log.Printf("Deposit success (TxHash: %s)\n", tx.Hash().Hex())
 	}
 
-	tx, err := chain.ICS20Transfer.SendTransfer(
+	tx, err := ics20Transfer.SendTransfer(
 		chain.TxOpts(ctx, fromIndex),
 		denom,
 		uint64(amount),

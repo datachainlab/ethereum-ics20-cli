@@ -7,6 +7,7 @@ import (
 
 	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
 	"github.com/spf13/cobra"
 )
 
@@ -50,11 +51,12 @@ func transfer(ctx context.Context, rpcAddress string, mnemonic string, fromIndex
 	if err != nil {
 		return err
 	}
-	if err := chain.AddERC20Token(denom); err != nil {
+	erc20Token, err := erc20.NewErc20(common.HexToAddress(denom), chain.Client)
+	if err != nil {
 		return err
 	}
 
-	tx, err := chain.Erc20Token.Transfer(chain.TxOpts(ctx, fromIndex), common.HexToAddress(toAddress), big.NewInt(amount))
+	tx, err := erc20Token.Transfer(chain.TxOpts(ctx, fromIndex), common.HexToAddress(toAddress), big.NewInt(amount))
 	if err != nil {
 		return err
 	}
