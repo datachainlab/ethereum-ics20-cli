@@ -4,7 +4,6 @@
 ```bash
 $ git clone https://github.com/datachainlab/ethereum-ics20-cli.git
 $ cd ethereum-ics20-cli
-$ git checkout v0.0.3
 $ go install
 CLI="ethereum-ics20-cli"
 ```
@@ -12,7 +11,7 @@ CLI="ethereum-ics20-cli"
 ## erc20
 ```bash
 ${CLI} erc20 balance --rpc-address=${rpc_address} --wallet-address=${wallet_address} --denom=${denom}
-${CLI} erc20 transfer --rpc-address=${RPC_ADDRESS} --mnemonic="${MNEMONIC}" --ics20-bank-address=${ICS20_BANK_ADDRESS} --ics20-transfer-bank-address=${ICS20_TRANSFER_BANK_ADDRESS} --from-index=${from_index} --to-address=${to_address} --amount=${amount} --denom=${DENOM}
+${CLI} erc20 transfer --rpc-address=${RPC_ADDRESS} --mnemonic="${MNEMONIC}" --from-index=${from_index} --to-address=${to_address} --amount=${amount} --denom=${DENOM}
 ```
 
 ## ics20
