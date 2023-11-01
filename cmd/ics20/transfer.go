@@ -107,8 +107,8 @@ func transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress
 	tx, err := ics20Transfer.SendTransfer(
 		chain.TxOpts(ctx, fromIndex),
 		denom,
-		uint64(amount),
-		common.HexToAddress(toAddress),
+		big.NewInt(amount),
+		toAddress,
 		portID, channelID,
 		timeoutHeight,
 	)
