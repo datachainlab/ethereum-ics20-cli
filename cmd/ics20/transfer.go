@@ -5,12 +5,14 @@ import (
 	"log"
 	"math/big"
 
-	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
 	"github.com/spf13/cobra"
+
+	"github.com/datachainlab/ethereum-ics20-cli/chains/geth"
+	"github.com/datachainlab/ethereum-ics20-cli/util"
 )
 
 func transferCmd() *cobra.Command {
@@ -75,6 +77,11 @@ func transfer(ctx context.Context, rpcAddress string, mnemonic, ics20BankAddress
 		return err
 	}
 	ics20Bank, err := ics20bank.NewIcs20bank(common.HexToAddress(ics20BankAddress), chain.Client)
+	if err != nil {
+		return err
+	}
+
+	denom, err = util.ToCanonicalICS20Denom(denom)
 	if err != nil {
 		return err
 	}
